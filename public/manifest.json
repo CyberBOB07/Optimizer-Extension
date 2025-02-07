@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "TradingView Strategy Optimizer",
-  "version": "1.0.0",
-  "description": "Оптимизатор торговых стратегий для TradingView",
+  "version": "4.0.2",
+  "description": "Оптимизатор торговых стратегий для TradingView (Version 4b - Порочное зачатие)",
   "permissions": [
     "storage",
     "tabs",
