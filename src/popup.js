@@ -1,55 +1,42 @@
-// Функция обновления информации в popup
-function updateInfo() {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_TRADING_INFO' }, (response) => {
-            if (chrome.runtime.lastError) {
-                console.log(chrome.runtime.lastError);
-                return;
-            }
-            
-            if (response) {
-                document.getElementById('symbol').textContent = response.symbol;
-                document.getElementById('interval').textContent = response.interval;
-            }
-        });
-    });
-}
-
 // При загрузке popup
 document.addEventListener('DOMContentLoaded', () => {
     const toggleSwitch = document.getElementById('showOnPage');
     
     // Загрузка состояния переключателя
     chrome.storage.local.get(['showInfoWindow'], (result) => {
+        console.log('Loaded storage:', result);
         // Включено по умолчанию
         const showWindow = result.showInfoWindow !== undefined ? result.showInfoWindow : true;
         toggleSwitch.checked = showWindow;
-        
-        // Если окно должно быть показано по умолчанию, отправляем сообщение
-        if (showWindow) {
-            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                chrome.tabs.sendMessage(tabs[0].id, { 
-                    type: 'TOGGLE_INFO_WINDOW',
-                    show: true
-                });
-            });
-        }
     });
 
     // Обработчик изменения переключателя
     toggleSwitch.addEventListener('change', () => {
         const showInfoWindow = toggleSwitch.checked;
-        chrome.storage.local.set({ showInfoWindow });
+        console.log('Toggle switch changed:', showInfoWindow);
         
-        // Отправляем сообщение в content script
+        // Отправляем сообщение в content script только на TradingView
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            chrome.tabs.sendMessage(tabs[0].id, { 
-                type: 'TOGGLE_INFO_WINDOW',
-                show: showInfoWindow
-            });
+            if (tabs[0].url.includes('tradingview.com')) {
+                chrome.tabs.sendMessage(tabs[0].id, { 
+                    type: 'TOGGLE_INFO_WINDOW',
+                    show: showInfoWindow
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.log('Error:', chrome.runtime.lastError);
+                        // В случае ошибки возвращаем переключатель в предыдущее состояние
+                        toggleSwitch.checked = !showInfoWindow;
+                    } else if (response && response.success) {
+                        console.log('Window toggled successfully');
+                        // Сохраняем состояние только после успешного переключения
+                        chrome.storage.local.set({ showInfoWindow });
+                    } else {
+                        console.log('Failed to toggle window:', response);
+                        // В случае ошибки возвращаем переключатель в предыдущее состояние
+                        toggleSwitch.checked = !showInfoWindow;
+                    }
+                });
+            }
         });
     });
-
-    // Обновляем информацию при открытии
-    updateInfo();
 });
