@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            width: 250px;
+            padding: 10px;
+            margin: 0;
+            background: #131722;
+            color: #d1d4dc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .header {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #363c4e;
+        }
+        .info-row {
+            font-size: 12px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .label {
+            color: #787b86;
+        }
+        .value {
+            color: #d1d4dc;
+        }
+        #status {
+            margin-top: 10px;
+            font-size: 11px;
+            color: #787b86;
+        }
+        .switch-row {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #363c4e;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            margin-left: auto;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #363c4e;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #d1d4dc;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2962FF;
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        .switch-label {
+            font-size: 12px;
+            color: #787b86;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">TradingView Optimizer</div>
+    <div class="info-row">
+        <span class="label">Символ:</span>
+        <span class="value" id="symbol">Загрузка...</span>
+    </div>
+    <div class="info-row">
+        <span class="label">Интервал:</span>
+        <span class="value" id="interval">Загрузка...</span>
+    </div>
+    <div class="switch-row">
+        <span class="switch-label">Показывать на странице</span>
+        <label class="switch">
+            <input type="checkbox" id="showOnPage">
+            <span class="slider"></span>
+        </label>
+    </div>
+    <div id="status">Ожидание данных...</div>
+    <script src="popup.js"></script>
+</body>
+</html>
