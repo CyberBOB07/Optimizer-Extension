@@ -1,3 +1,174 @@
+// Функция создания информационного окна
+function createInfoWindow() {
+    const window = document.createElement('div');
+    window.className = 'tv-optimizer-window';
+    window.style.cssText = `
+        position: fixed;
+        top: 50px;
+        right: 50px;
+        background: #131722;
+        color: #d1d4dc;
+        border: 1px solid #363c4e;
+        border-radius: 3px;
+        padding: 8px;
+        z-index: 999;
+        min-width: 200px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        font-size: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        user-select: none;
+    `;
+    
+    document.body.appendChild(window);
+    infoWindow = window;
+    updateInfoWindow(window);
+    makeWindowDraggable(window);
+    
+    return window;
+}
+
+// Функция обновления содержимого окна
+function updateInfoWindow(window = infoWindow) {
+    if (!window) {
+        console.log('No window to update');
+        return;
+    }
+    
+    const info = getTradingInfo();
+
+    window.innerHTML = `
+        <div class="content">
+            <div style="margin-bottom: 4px; color: #d1d4dc;">TradingView Optimizer</div>
+            <div style="font-size: 11px; opacity: 0.8; color: #787b86;">
+                <div>Symbol: ${info.symbol}</div>
+                <div>Interval: ${info.interval}</div>
+                <div>Settings: ${isStrategySettingsDetected ? '✅' : '❌'}</div>
+                <div>Tracking: ${isTrackingMode ? '🔍' : '⏸️'}</div>
+            </div>
+            ${!isStrategySettingsDetected ? `
+                <button class="tv-optimizer-button" id="trackButton" style="
+                    background: #2962ff;
+                    color: #fff;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 6px 12px;
+                    margin-top: 8px;
+                    cursor: pointer;
+                    font-size: 12px;
+                ">
+                    ${isTrackingMode ? 'Cancel Tracking' : 'Detect Settings Button'}
+                </button>
+            ` : `
+                <div style="display: flex; gap: 4px; align-items: center; margin-top: 8px;">
+                    <button class="tv-optimizer-button" id="openSettingsButton" style="
+                        background: #2962ff;
+                        color: #fff;
+                        border: none;
+                        border-radius: 4px;
+                        padding: 6px 12px;
+                        cursor: pointer;
+                        font-size: 12px;
+                    ">
+                        Open Strategy Settings
+                    </button>
+                    <button class="tv-optimizer-button" id="resetButton" style="
+                        padding: 4px 8px;
+                        min-width: auto;
+                        background: #364250;
+                        color: #d1d4dc;
+                        border: 1px solid #4c525e;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 12px;
+                    " title="Detect button again">
+                        🔄
+                    </button>
+                </div>
+            `}
+            ${backtestResults.netProfit !== null ? `
+                <div class="backtest-results" style="
+                    margin-top: 8px;
+                    padding-top: 8px;
+                    border-top: 1px solid #363c4e;
+                ">
+                    <div class="result-item" style="margin: 4px 0;">
+                        <span class="label" style="color: #787b86;">Net Profit:</span>
+                        <span class="value ${getValueClass(backtestResults.netProfit)}" style="
+                            color: ${getValueClass(backtestResults.netProfit) === 'positive' ? '#089981' : 
+                                   getValueClass(backtestResults.netProfit) === 'negative' ? '#f23645' : '#d1d4dc'}
+                        ">
+                            ${formatUSDT(backtestResults.netProfit)}
+                            ${backtestResults.netProfitPercent ? `(${formatPercent(backtestResults.netProfitPercent)})` : ''}
+                        </span>
+                    </div>
+                    <div class="result-item" style="margin: 4px 0;">
+                        <span class="label" style="color: #787b86;">Total Closed Trades:</span>
+                        <span class="value" style="color: #d1d4dc;">${backtestResults.totalTrades || '—'}</span>
+                    </div>
+                    <div class="result-item" style="margin: 4px 0;">
+                        <span class="label" style="color: #787b86;">Percent Profitable:</span>
+                        <span class="value" style="color: #d1d4dc;">${formatPercent(backtestResults.percentProfitable)}</span>
+                    </div>
+                    <div class="result-item" style="margin: 4px 0;">
+                        <span class="label" style="color: #787b86;">Profit Factor:</span>
+                        <span class="value ${getValueClass(backtestResults.profitFactor - 1)}" style="
+                            color: ${getValueClass(backtestResults.profitFactor - 1) === 'positive' ? '#089981' : 
+                                   getValueClass(backtestResults.profitFactor - 1) === 'negative' ? '#f23645' : '#d1d4dc'}
+                        ">${formatNumber(backtestResults.profitFactor)}</span>
+                    </div>
+                    <div class="result-item" style="margin: 4px 0;">
+                        <span class="label" style="color: #787b86;">Max Drawdown:</span>
+                        <span class="value ${getValueClass(-backtestResults.maxDrawdown)}" style="
+                            color: ${getValueClass(-backtestResults.maxDrawdown) === 'positive' ? '#089981' : 
+                                   getValueClass(-backtestResults.maxDrawdown) === 'negative' ? '#f23645' : '#d1d4dc'}
+                        ">
+                            ${formatUSDT(backtestResults.maxDrawdown)}
+                            ${backtestResults.maxDrawdownPercent ? `(${formatPercent(backtestResults.maxDrawdownPercent)})` : ''}
+                        </span>
+                    </div>
+                    <div class="result-item" style="margin: 4px 0;">
+                        <span class="label" style="color: #787b86;">Avg Trade:</span>
+                        <span class="value ${getValueClass(backtestResults.avgTrade)}" style="
+                            color: ${getValueClass(backtestResults.avgTrade) === 'positive' ? '#089981' : 
+                                   getValueClass(backtestResults.avgTrade) === 'negative' ? '#f23645' : '#d1d4dc'}
+                        ">
+                            ${formatUSDT(backtestResults.avgTrade)}
+                            ${backtestResults.avgTradePercent ? `(${formatPercent(backtestResults.avgTradePercent)})` : ''}
+                        </span>
+                    </div>
+                    <div class="result-item" style="margin: 4px 0;">
+                        <span class="label" style="color: #787b86;">Avg # Bars in Trades:</span>
+                        <span class="value" style="color: #d1d4dc;">${formatNumber(backtestResults.avgBarsInTrade, 0)}</span>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
+    // Добавляем обработчики для кнопок
+    if (!isStrategySettingsDetected) {
+        const trackButton = window.querySelector('#trackButton');
+        if (trackButton) {
+            trackButton.addEventListener('click', () => {
+                toggleTrackingMode(!isTrackingMode);
+            });
+        }
+    } else {
+        const openSettingsButton = window.querySelector('#openSettingsButton');
+        if (openSettingsButton) {
+            openSettingsButton.addEventListener('click', openStrategySettings);
+        }
+        
+        const resetButton = window.querySelector('#resetButton');
+        if (resetButton) {
+            resetButton.addEventListener('click', resetSettings);
+        }
+    }
+
+    // Делаем окно перетаскиваемым
+    makeWindowDraggable(window);
+}
+
 // Функция для получения информации о торговле
 function getTradingInfo() {
     try {
@@ -22,270 +193,171 @@ function getTradingInfo() {
 
 // Глобальные переменные
 let infoWindow = null;
-let isStrategySettingsDetected = false;
 let isTrackingMode = false;
+let isStrategySettingsDetected = false;
 let strategySettingsSelector = '';
 let strategyButtonIndex = -1;
-let updateInterval = null;
-
-// Константы для селекторов
-const DEFAULT_SETTINGS_BUTTON_SELECTOR = '#bottom-area .backtesting .strategyGroup-zf0MHBzY .fixedContent-zf0MHBzY button.lightButton-bYDQcOkp.ghost-PVWoXu5j.gray-PVWoXu5j';
-
-// Функция создания информационного окна
-function createInfoWindow() {
-    const infoWindow = document.createElement('div');
-    infoWindow.id = 'tv-optimizer-info';
-    
-    // Добавляем стили
-    const style = document.createElement('style');
-    style.textContent = `
-        #tv-optimizer-info {
-            position: fixed;
-            top: 50px;
-            right: 200px;
-            background: #131722;
-            color: #d1d4dc;
-            padding: 10px;
-            border-radius: 4px;
-            z-index: 9999;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            user-select: none;
-            cursor: move;
-            border: 1px solid #363c4e;
-            min-width: 200px;
-        }
-        .tv-optimizer-button {
-            margin-top: 8px;
-            padding: 6px 10px;
-            background: #2962ff;
-            border: none;
-            border-radius: 4px;
-            color: white;
-            cursor: pointer;
-            width: 100%;
-            font-size: 11px;
-            transition: background 0.2s;
-        }
-        .tv-optimizer-button:hover {
-            background: #1e4bd8;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Обновляем содержимое окна
-    updateInfoWindow(infoWindow);
-    
-    // Добавляем окно на страницу
-    document.body.appendChild(infoWindow);
-    
-    // Делаем окно перетаскиваемым
-    makeWindowDraggable(infoWindow);
-    
-    // Восстанавливаем позицию и состояние
-    chrome.storage.local.get(['windowPosition', 'strategySettingsDetected', 'strategySettingsSelector', 'strategyButtonIndex'], (result) => {
-        if (result.windowPosition) {
-            infoWindow.style.top = result.windowPosition.top;
-            infoWindow.style.right = result.windowPosition.right;
-        }
-        if (result.strategySettingsDetected) {
-            isStrategySettingsDetected = true;
-            strategySettingsSelector = result.strategySettingsSelector;
-            strategyButtonIndex = result.strategyButtonIndex;
-            updateInfoWindow(infoWindow);
-        }
-    });
-    
-    // Запускаем автообновление
-    if (updateInterval) {
-        clearInterval(updateInterval);
-    }
-    updateInterval = setInterval(() => {
-        console.log('Auto-updating info window');
-        updateInfoWindow(infoWindow);
-    }, 2000);
-    
-    return infoWindow;
-}
-
-// Функция обновления содержимого окна
-function updateInfoWindow(window = infoWindow) {
-    console.log('updateInfoWindow called', {
-        window: window,
-        isStrategySettingsDetected: isStrategySettingsDetected,
-        isTrackingMode: isTrackingMode,
-        strategySettingsSelector: strategySettingsSelector,
-        strategyButtonIndex: strategyButtonIndex
-    });
-    
-    if (!window) {
-        console.log('No window to update');
-        return;
-    }
-    
-    const info = getTradingInfo();
-    window.innerHTML = `
-        <div class="content">
-            <div style="margin-bottom: 4px;">TradingView Optimizer</div>
-            <div style="font-size: 11px; opacity: 0.8;">
-                <div>Символ: ${info.symbol}</div>
-                <div>Интервал: ${info.interval}</div>
-                <div>Settings: ${isStrategySettingsDetected ? '✅' : '❌'}</div>
-                <div>Tracking: ${isTrackingMode ? '🔍' : '⏸️'}</div>
-            </div>
-            ${!isStrategySettingsDetected ? `
-                <button class="tv-optimizer-button" id="trackButton">
-                    ${isTrackingMode ? 'Отмена отслеживания' : 'Определить кнопку настроек'}
-                </button>
-            ` : `
-                <div style="display: flex; gap: 4px; align-items: center;">
-                    <button class="tv-optimizer-button" id="openSettingsButton">
-                        Открыть настройки стратегии
-                    </button>
-                    <button class="tv-optimizer-button" id="resetButton" style="padding: 4px 8px; min-width: auto;" title="Определить кнопку заново">
-                        🔄
-                    </button>
-                </div>
-            `}
-        </div>
-    `;
-    
-    console.log('Window HTML updated');
-    
-    // Добавляем обработчики для кнопок
-    if (!isStrategySettingsDetected) {
-        const trackButton = window.querySelector('#trackButton');
-        if (trackButton) {
-            console.log('Adding track button handler');
-            trackButton.addEventListener('click', () => {
-                toggleTrackingMode(!isTrackingMode);
-            });
-        }
-    } else {
-        const openSettingsButton = window.querySelector('#openSettingsButton');
-        if (openSettingsButton) {
-            console.log('Adding settings button handler');
-            openSettingsButton.addEventListener('click', openStrategySettings);
-        }
-        
-        // Добавляем обработчик для кнопки сброса
-        const resetButton = window.querySelector('#resetButton');
-        if (resetButton) {
-            console.log('Adding reset button handler');
-            resetButton.addEventListener('click', resetSettings);
-        }
-    }
-    
-    console.log('Window update complete');
-}
+const DEFAULT_SETTINGS_BUTTON_SELECTOR = 'button[title="Settings"].apply-common-tooltip';
 
 // Структура для хранения результатов бэктеста
 let backtestResults = {
     netProfit: null,
+    netProfitPercent: null,
     totalTrades: null,
     percentProfitable: null,
     profitFactor: null,
     maxDrawdown: null,
-    netProfitPercent: null,
-    maxDrawdownPercent: null
+    maxDrawdownPercent: null,
+    avgTrade: null,
+    avgTradePercent: null,
+    avgBarsInTrade: null
 };
 
-// Функция для парсинга результатов бэктеста
+// Функция парсинга результатов бэктеста
 function parseBacktestResults() {
-    try {
-        const cells = document.querySelectorAll('.containerCell-Yvm0jjs7');
-        if (!cells || cells.length === 0) {
-            console.log('Ячейки с результатами не найдены');
-            return null;
-        }
-
-        cells.forEach(cell => {
-            const titleElement = cell.querySelector('.title-Yvm0jjs7');
-            const secondRow = cell.querySelector('.secondRow-Yvm0jjs7');
-            
-            if (!titleElement || !secondRow) return;
-            
-            const title = titleElement.textContent.trim();
-            
-            switch (title) {
-                case 'Net Profit': {
-                    const value = secondRow.querySelector('.positiveValue-Yvm0jjs7')?.textContent?.trim();
-                    const percent = secondRow.querySelector('.additionalPercent-Yvm0jjs7')?.textContent?.trim();
-                    backtestResults.netProfit = value;
-                    backtestResults.netProfitPercent = percent;
-                    break;
-                }
-                case 'Total Closed Trades': {
-                    const value = secondRow.querySelector('div:first-child')?.textContent?.trim();
-                    backtestResults.totalTrades = value;
-                    break;
-                }
-                case 'Percent Profitable': {
-                    const value = secondRow.querySelector('.positiveValue-Yvm0jjs7')?.textContent?.trim();
-                    backtestResults.percentProfitable = value;
-                    break;
-                }
-                case 'Profit Factor': {
-                    const value = secondRow.querySelector('.positiveValue-Yvm0jjs7')?.textContent?.trim();
-                    backtestResults.profitFactor = value;
-                    break;
-                }
-                case 'Max Drawdown': {
-                    const value = secondRow.querySelector('.negativeValue-Yvm0jjs7')?.textContent?.trim();
-                    const percent = secondRow.querySelector('.additionalPercent-Yvm0jjs7')?.textContent?.trim();
-                    backtestResults.maxDrawdown = value;
-                    backtestResults.maxDrawdownPercent = percent;
-                    break;
-                }
-            }
-        });
-
-        console.log('Результаты парсинга:', backtestResults);
-        return backtestResults;
-    } catch (error) {
-        console.error('Ошибка при парсинге результатов:', error);
+    console.log('Parsing backtest results');
+    
+    // Проверяем наличие окна
+    if (!infoWindow) {
+        console.log('Creating missing info window');
+        createInfoWindow();
+    }
+    
+    // Находим контейнер с результатами
+    const reportContainer = document.querySelector('.reportContainer-xOy3zRsH');
+    if (!reportContainer) {
+        console.log('Report container not found');
         return null;
     }
+
+    const container = reportContainer.querySelector('.container-Yvm0jjs7');
+    if (!container) {
+        console.log('Results container not found in report container');
+        return null;
+    }
+
+    // Функция для извлечения значений по заголовку
+    const getValuesByTitle = (title) => {
+        const cell = Array.from(container.querySelectorAll('.containerCell-Yvm0jjs7'))
+            .find(cell => cell.querySelector('.title-Yvm0jjs7')?.textContent === title);
+            
+        if (!cell) {
+            console.log(`Cell with title "${title}" not found`);
+            return { main: null, additional: null };
+        }
+
+        const secondRow = cell.querySelector('.secondRow-Yvm0jjs7');
+        if (!secondRow) {
+            console.log(`Second row not found for "${title}"`);
+            return { main: null, additional: null };
+        }
+
+        // Получаем основное значение (первый div)
+        const mainDiv = secondRow.querySelector('div:first-child');
+        const mainValue = mainDiv?.textContent?.trim();
+        
+        // Получаем дополнительное процентное значение (второй div с классом additionalPercent)
+        const additionalDiv = secondRow.querySelector('.additionalPercent-Yvm0jjs7');
+        const additionalValue = additionalDiv?.textContent?.trim();
+
+        console.log(`Found values for ${title}:`, { 
+            main: mainValue, 
+            mainClass: mainDiv?.className,
+            additional: additionalValue,
+            additionalClass: additionalDiv?.className
+        });
+        
+        return { main: mainValue, additional: additionalValue };
+    };
+
+    // Функция для очистки и парсинга числового значения
+    const parseValue = (value, removeUSDT = true) => {
+        if (!value) return null;
+        
+        // Заменяем различные виды минусов на стандартный
+        let cleaned = value.replace(/[\u2212\u2013\u2014−]/g, '-');
+        
+        if (removeUSDT) {
+            cleaned = cleaned.replace(' USDT', '');
+        }
+        
+        cleaned = cleaned.replace('%', '').replace(/,/g, '');
+        const parsed = parseFloat(cleaned);
+        
+        console.log('Parsing value:', { 
+            original: value, 
+            afterMinusReplacement: cleaned,
+            parsed: parsed,
+            isNaN: isNaN(parsed)
+        });
+        
+        return isNaN(parsed) ? null : parsed;
+    };
+
+    // Извлекаем все значения
+    const netProfit = getValuesByTitle('Net Profit');
+    const totalTrades = getValuesByTitle('Total Closed Trades');
+    const percentProfitable = getValuesByTitle('Percent Profitable');
+    const profitFactor = getValuesByTitle('Profit Factor');
+    const maxDrawdown = getValuesByTitle('Max Drawdown');
+    const avgTrade = getValuesByTitle('Avg Trade');
+    const avgBarsInTrade = getValuesByTitle('Avg # Bars in Trades');
+
+    // Преобразуем значения в числа
+    const results = {
+        netProfit: parseValue(netProfit.main),
+        netProfitPercent: parseValue(netProfit.additional),
+        totalTrades: parseInt(totalTrades.main) || null,
+        percentProfitable: parseValue(percentProfitable.main),
+        profitFactor: parseValue(profitFactor.main),
+        maxDrawdown: parseValue(maxDrawdown.main),
+        maxDrawdownPercent: parseValue(maxDrawdown.additional),
+        avgTrade: parseValue(avgTrade.main),
+        avgTradePercent: parseValue(avgTrade.additional),
+        avgBarsInTrade: parseInt(avgBarsInTrade.main) || null
+    };
+
+    // Проверяем, что хотя бы одно значение не null
+    const hasValidResults = Object.values(results).some(value => value !== null);
+    
+    if (hasValidResults) {
+        console.log('Valid results found:', results);
+        backtestResults = results;
+        
+        // Обновляем окно с новыми результатами
+        if (infoWindow) {
+            console.log('Updating existing info window');
+            updateInfoWindow(infoWindow);
+        } else {
+            console.log('Info window lost, creating new one');
+            createInfoWindow();
+        }
+    } else {
+        console.log('No valid results found');
+    }
+
+    return hasValidResults ? results : null;
 }
 
-// Обновляем функцию updateInfoWindow, добавляя результаты бэктеста
-const originalUpdateInfoWindow = updateInfoWindow;
-updateInfoWindow = function(window = infoWindow) {
-    // Сначала вызываем оригинальную функцию
-    originalUpdateInfoWindow(window);
-    
-    // Если окно существует, добавляем результаты бэктеста
-    if (window) {
-        const content = window.querySelector('.content');
-        if (content) {
-            // Парсим результаты
-            parseBacktestResults();
-            
-            // Добавляем результаты, если они есть
-            if (backtestResults.netProfit) {
-                const backtestDiv = document.createElement('div');
-                backtestDiv.style.fontSize = '11px';
-                backtestDiv.style.opacity = '0.8';
-                backtestDiv.style.marginTop = '8px';
-                backtestDiv.style.borderTop = '1px solid #363c4e';
-                backtestDiv.style.paddingTop = '8px';
-                
-                const isPositive = !backtestResults.netProfit.includes('-');
-                const profitColor = isPositive ? '#089981' : '#f23645';
-                
-                backtestDiv.innerHTML = `
-                    <div style="margin-bottom: 4px; font-weight: bold;">Результаты бэктеста:</div>
-                    <div style="color: ${profitColor}">Прибыль: ${backtestResults.netProfit} (${backtestResults.netProfitPercent})</div>
-                    <div>Сделок: ${backtestResults.totalTrades}</div>
-                    <div>Прибыльных: ${backtestResults.percentProfitable}</div>
-                    <div>П/Ф: ${backtestResults.profitFactor}</div>
-                    <div style="color: #f23645">Просадка: ${backtestResults.maxDrawdown} (${backtestResults.maxDrawdownPercent})</div>
-                `;
-                
-                content.appendChild(backtestDiv);
-            }
-        }
-    }
-};
+function formatNumber(num, decimals = 2) {
+    if (num === null || num === undefined || isNaN(num)) return '—';
+    return num.toFixed(decimals);
+}
+
+function formatPercent(num) {
+    if (num === null || num === undefined || isNaN(num)) return '—';
+    return `${num.toFixed(2)}%`;
+}
+
+function formatUSDT(num) {
+    if (num === null || num === undefined || isNaN(num)) return '—';
+    return `${num.toFixed(2)} USDT`;
+}
+
+function getValueClass(num) {
+    if (num === null || num === undefined || isNaN(num)) return '';
+    return num > 0 ? 'positive' : num < 0 ? 'negative' : '';
+}
 
 // Функция проверки доступности кнопки настроек
 function checkDefaultSettingsButton() {
@@ -645,41 +717,156 @@ setInterval(() => {
 }, 5000);
 
 // При инициализации восстанавливаем сохраненные данные
-chrome.storage.local.get(['strategySettingsDetected', 'strategySettingsSelector', 'strategyButtonIndex'], (result) => {
+chrome.storage.local.get(['strategyButtonIndex', 'strategySettingsDetected', 'strategySettingsSelector'], (result) => {
     console.log('Loaded storage:', result);
+    
     if (result.strategySettingsDetected) {
         isStrategySettingsDetected = true;
         strategySettingsSelector = result.strategySettingsSelector;
         strategyButtonIndex = result.strategyButtonIndex;
         console.log('Restored settings selector:', strategySettingsSelector, 'with index:', strategyButtonIndex);
     }
+    
+    // Создаем информационное окно
+    createInfoWindow();
+    
+    // Запускаем наблюдение за результатами бэктеста
+    observeBacktestResults();
 });
 
-// Создаем MutationObserver для отслеживания изменений в результатах бэктеста
-const backtestObserver = new MutationObserver(() => {
-    if (infoWindow) {
-        updateInfoWindow();
-    }
+// Функция инициализации
+function init() {
+    console.log('Initializing TradingView Optimizer...');
+    
+    chrome.storage.local.get(['strategyButtonIndex', 'strategySettingsDetected', 'strategySettingsSelector'], (result) => {
+        console.log('Loaded storage:', result);
+        
+        if (result.strategySettingsDetected) {
+            isStrategySettingsDetected = true;
+            strategySettingsSelector = result.strategySettingsSelector;
+            strategyButtonIndex = result.strategyButtonIndex;
+            console.log('Restored settings selector:', strategySettingsSelector, 'with index:', strategyButtonIndex);
+        }
+        
+        createInfoWindow();
+        observeBacktestResults();
+    });
+}
+
+// Запускаем инициализацию
+init();
+
+// Запускаем наблюдение при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, starting observers');
+    setTimeout(observeBacktestResults, 2000);
 });
 
 // Функция для запуска наблюдения за результатами бэктеста
 function observeBacktestResults() {
-    const resultsContainer = document.querySelector('.backtesting-content');
-    if (resultsContainer) {
-        backtestObserver.observe(resultsContainer, {
-            childList: true,
-            subtree: true,
-            characterData: true
-        });
-    }
+    console.log('Starting backtest results observer');
+    
+    // Функция для поиска контейнера с результатами
+    const findResultsContainer = () => {
+        // Сначала ищем reportContainer
+        const reportContainer = document.querySelector('.reportContainer-xOy3zRsH');
+        if (reportContainer) {
+            console.log('Found report container');
+            return reportContainer;
+        }
+
+        // Если не нашли reportContainer, ищем в bottom-area
+        const bottomArea = document.querySelector('#bottom-area');
+        if (!bottomArea) {
+            console.log('Bottom area not found');
+            return null;
+        }
+
+        // Ищем контейнер с результатами
+        const container = bottomArea.querySelector('.container-Yvm0jjs7');
+        if (!container) {
+            console.log('Results container not found');
+            return null;
+        }
+
+        console.log('Found results container in bottom area');
+        return container;
+    };
+
+    // Функция обработки изменений
+    const handleBacktestUpdate = (mutations) => {
+        console.log('Processing backtest update, mutations:', mutations.length);
+        
+        // Проверяем, есть ли значимые изменения
+        let hasRelevantChanges = false;
+        for (const mutation of mutations) {
+            // Проверяем добавление/удаление узлов
+            if (mutation.type === 'childList') {
+                hasRelevantChanges = true;
+                console.log('Detected DOM structure change');
+                break;
+            }
+            
+            // Проверяем изменение текста
+            if (mutation.type === 'characterData') {
+                const parent = mutation.target.parentElement;
+                if (parent && (
+                    parent.classList.contains('secondRow-Yvm0jjs7') ||
+                    parent.classList.contains('positiveValue-Yvm0jjs7') ||
+                    parent.classList.contains('negativeValue-Yvm0jjs7')
+                )) {
+                    hasRelevantChanges = true;
+                    console.log('Detected value change in:', parent);
+                    break;
+                }
+            }
+        }
+
+        if (hasRelevantChanges) {
+            console.log('Parsing updated results');
+            const results = parseBacktestResults();
+            if (results) {
+                console.log('New results parsed:', results);
+                updateInfoWindow();
+            }
+        }
+    };
+
+    // Создаем наблюдатель
+    const observer = new MutationObserver((mutations) => {
+        // Используем debounce, чтобы не обрабатывать слишком часто
+        clearTimeout(observer.timeout);
+        observer.timeout = setTimeout(() => {
+            handleBacktestUpdate(mutations);
+        }, 100); // Задержка 100мс
+    });
+
+    // Функция для начала наблюдения
+    const startObserving = () => {
+        const container = findResultsContainer();
+        if (container) {
+            console.log('Starting observation of container');
+            observer.observe(container, {
+                childList: true,
+                subtree: true,
+                characterData: true,
+                attributes: false
+            });
+            // Сразу парсим текущие результаты
+            handleBacktestUpdate([{ type: 'childList' }]);
+        } else {
+            console.log('Container not found, retrying in 1 second');
+            setTimeout(startObserving, 1000);
+        }
+    };
+
+    // Запускаем наблюдение
+    startObserving();
+
+    // Возвращаем функцию очистки
+    return () => {
+        console.log('Stopping backtest results observer');
+        clearTimeout(observer.timeout);
+        observer.disconnect();
+    };
 }
-
-// Запускаем наблюдение при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(observeBacktestResults, 2000);
-});
-
-// Периодически проверяем наличие контейнера с результатами
-setInterval(() => {
-    observeBacktestResults();
-}, 5000);

@@ -36,6 +36,11 @@ export class TradingViewParser {
     private static readonly TRADES_TABLE_SELECTOR = '[data-name="trades-table"]';
     private static readonly TRADE_ROW_SELECTOR = '[data-name="trade-row"]';
 
+    // Селекторы для результатов бектеста
+    private static readonly CONTAINER_CELL_SELECTOR = '.containerCell-Yvm0jjs7';
+    private static readonly VALUE_SELECTOR = '.secondRow-Yvm0jjs7 div:first-child';
+    private static readonly PERCENT_SELECTOR = '.secondRow-Yvm0jjs7 .additionalPercent-Yvm0jjs7';
+
     /**
      * Ждет появления элемента на странице
      */
@@ -53,12 +58,31 @@ export class TradingViewParser {
     }
 
     /**
-     * Извлекает числовое значение из текста
+     * Извлекает числовое значение из текста, игнорируя символ валюты
      */
     private static extractNumber(text: string | null | undefined): number {
         if (!text) return 0;
-        const match = text.match(/-?\d+\.?\d*/);
-        return match ? parseFloat(match[0]) : 0;
+        // Удаляем символ валюты и знак минуса (будет добавлен при парсинге)
+        text = text.replace(/USDT/g, '').trim();
+        // Проверяем на отрицательное значение
+        const isNegative = text.includes('−') || text.includes('-');
+        // Извлекаем число
+        const match = text.match(/\d+\.?\d*/);
+        if (!match) return 0;
+        const value = parseFloat(match[0]);
+        return isNegative ? -value : value;
+    }
+
+    /**
+     * Извлекает процентное значение из текста
+     */
+    private static extractPercent(text: string | null | undefined): number {
+        if (!text) return 0;
+        const isNegative = text.includes('−') || text.includes('-');
+        const match = text.match(/\d+\.?\d*/);
+        if (!match) return 0;
+        const value = parseFloat(match[0]);
+        return isNegative ? -value : value;
     }
 
     /**
@@ -162,5 +186,57 @@ export class TradingViewParser {
             console.error('Error getting current drawdown:', error);
             return 0;
         }
+    }
+
+    /**
+     * Парсит результаты бектеста из HTML
+     */
+    public static parseBacktestResults(html: string): StrategyResult {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        const cells = doc.querySelectorAll(this.CONTAINER_CELL_SELECTOR);
+        const result: StrategyResult = {
+            netProfit: 0,
+            totalTrades: 0,
+            percentProfitable: 0,
+            profitFactor: 0,
+            maxDrawdown: 0,
+            avgTrade: 0,
+            avgBarsInTrade: 0,
+            avgWinTrade: 0,
+            avgLossTrade: 0
+        };
+
+        cells.forEach(cell => {
+            const title = cell.querySelector('.title-Yvm0jjs7')?.textContent?.trim();
+            const value = cell.querySelector(this.VALUE_SELECTOR)?.textContent?.trim();
+            
+            switch (title) {
+                case 'Net Profit':
+                    result.netProfit = this.extractNumber(value);
+                    break;
+                case 'Total Closed Trades':
+                    result.totalTrades = this.extractNumber(value);
+                    break;
+                case 'Percent Profitable':
+                    result.percentProfitable = this.extractNumber(value);
+                    break;
+                case 'Profit Factor':
+                    result.profitFactor = this.extractNumber(value);
+                    break;
+                case 'Max Drawdown':
+                    result.maxDrawdown = this.extractNumber(value);
+                    break;
+                case 'Avg Trade':
+                    result.avgTrade = this.extractNumber(value);
+                    break;
+                case 'Avg # Bars in Trades':
+                    result.avgBarsInTrade = this.extractNumber(value);
+                    break;
+            }
+        });
+
+        return result;
     }
 }

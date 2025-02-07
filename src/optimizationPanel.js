@@ -99,7 +99,6 @@ class OptimizationPanel {
             .param-range label {
                 display: flex;
                 align-items: center;
-                margin: 4px 0;
             }
             .param-range label span {
                 width: 40px;
@@ -122,6 +121,36 @@ class OptimizationPanel {
             }
             .optimization-apply:hover {
                 background: #1e4bd8;
+            }
+            .backtest-results {
+                margin-top: 10px;
+                padding: 10px;
+                border-top: 1px solid #363c4e;
+            }
+            .backtest-results h4 {
+                margin: 0 0 8px 0;
+                color: #d1d4dc;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            .result-item {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 4px;
+                font-size: 12px;
+            }
+            .result-item .label {
+                color: #787b86;
+            }
+            .result-item .value {
+                color: #d1d4dc;
+                font-family: 'Consolas', monospace;
+            }
+            .result-item .value.positive {
+                color: #089981;
+            }
+            .result-item .value.negative {
+                color: #f23645;
             }
         `;
         document.head.appendChild(style);
@@ -233,6 +262,65 @@ class OptimizationPanel {
             params.push(param);
         });
         return params;
+    }
+
+    /**
+     * Обновляет результаты бектеста в панели
+     * @param {Object} results - результаты бектеста
+     */
+    updateBacktestResults(results) {
+        let resultsContainer = this.container.querySelector('.backtest-results');
+        if (!resultsContainer) {
+            resultsContainer = document.createElement('div');
+            resultsContainer.className = 'backtest-results';
+            this.container.querySelector('.optimization-content').appendChild(resultsContainer);
+        }
+
+        const formatNumber = (num, decimals = 2) => {
+            if (typeof num !== 'number') return '0';
+            return num.toFixed(decimals);
+        };
+
+        const formatPercent = (num) => `${formatNumber(num)}%`;
+        const formatUSDT = (num) => `${formatNumber(num)} USDT`;
+
+        const getValueClass = (num) => {
+            if (num > 0) return 'value positive';
+            if (num < 0) return 'value negative';
+            return 'value';
+        };
+
+        resultsContainer.innerHTML = `
+            <h4>Результаты бектеста</h4>
+            <div class="result-item">
+                <span class="label">Чистая прибыль:</span>
+                <span class="${getValueClass(results.netProfit)}">${formatUSDT(results.netProfit)}</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Всего сделок:</span>
+                <span class="value">${results.totalTrades}</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Прибыльных:</span>
+                <span class="value">${formatPercent(results.percentProfitable)}</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Профит-фактор:</span>
+                <span class="${getValueClass(results.profitFactor - 1)}">${formatNumber(results.profitFactor)}</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Макс. просадка:</span>
+                <span class="${getValueClass(-results.maxDrawdown)}">${formatUSDT(results.maxDrawdown)}</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Средняя сделка:</span>
+                <span class="${getValueClass(results.avgTrade)}">${formatUSDT(results.avgTrade)}</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Ср. баров в сделке:</span>
+                <span class="value">${formatNumber(results.avgBarsInTrade, 0)}</span>
+            </div>
+        `;
     }
 
     show(settings) {
