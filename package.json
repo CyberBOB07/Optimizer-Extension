@@ -5,11 +5,14 @@
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "dev": "webpack --watch --config webpack.config.js --no-hot --no-live-reload",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "e2e": "jest --config jest.config.e2e.js"
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "puppeteer": "^22.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.26.7",
