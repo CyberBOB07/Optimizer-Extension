@@ -1,0 +1,6 @@
+Все команды в терминале просто сообщать, я буду выполнять их самостоятельно
+Все команды в PowerShell писть строчными буквами! Не использовать верхний регистр
+Все новые функции встраиваем уже готовый интерфейс расширения, не делаем новые интерфейсы и окна.
+Вот наши готовые решения которые корректно работают: d:\windsurf\cascadeprojects\tradingview-optimizer-puppeteer\src\index.js d:\windsurf\cascadeprojects\tradingview-optimizer-puppeteer\src\popup.js
+
+Путь к Chrome: "c:\program files (x86)\google\chrome\application\chrome.exe"

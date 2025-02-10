@@ -1,0 +1,33 @@
+{
+  "name": "tradingview-optimizer",
+  "version": "1.0.0",
+  "description": "Chrome extension for optimizing TradingView strategies",
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "dev": "webpack --watch --config webpack.config.js --no-hot --no-live-reload",
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "e2e": "jest --config jest.config.e2e.js"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "puppeteer": "^22.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.7",
+    "@babel/preset-env": "^7.26.7",
+    "@types/chrome": "^0.0.260",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "babel-loader": "^9.2.1",
+    "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^7.1.2",
+    "sharp": "^0.33.5",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
