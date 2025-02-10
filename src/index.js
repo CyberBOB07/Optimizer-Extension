@@ -165,7 +165,7 @@ let isTrackingMode = false;
 let isStrategySettingsDetected = false;
 let strategySettingsSelector = '';
 let strategyButtonIndex = -1;
-const DEFAULT_SETTINGS_BUTTON_SELECTOR = 'button[title="Settings"].apply-common-tooltip';
+const DEFAULT_SETTINGS_BUTTON_SELECTOR = 'button.lightButton-bYDQcOkp.noContent-bYDQcOkp.withStartSlot-bYDQcOkp.ghost-PVWoXu5j.gray-PVWoXu5j.small-bYDQcOkp';
 
 // Структура для хранения результатов бэктеста
 let backtestResults = {
@@ -526,7 +526,7 @@ function detectStrategySettings(event) {
     });
     
     // Ищем кнопку настроек по разным селекторам
-    const settingsButton = target.closest('button.lightButton-bYDQcOkp.ghost-PVWoXu5j.gray-PVWoXu5j, [data-name="legend-settings-action"]');
+    const settingsButton = target.closest('button.lightButton-bYDQcOkp.noContent-bYDQcOkp.withStartSlot-bYDQcOkp.ghost-PVWoXu5j.gray-PVWoXu5j.small-bYDQcOkp, [data-name="legend-settings-action"]');
     console.log('Found settings button:', settingsButton);
     
     if (settingsButton) {
@@ -537,19 +537,13 @@ function detectStrategySettings(event) {
         event.returnValue = false;
         
         // Сохраняем селектор
-        if (settingsButton.matches('button.lightButton-bYDQcOkp.ghost-PVWoXu5j.gray-PVWoXu5j')) {
-            strategySettingsSelector = 'button.lightButton-bYDQcOkp.ghost-PVWoXu5j.gray-PVWoXu5j';
+        if (settingsButton.matches('button.lightButton-bYDQcOkp.noContent-bYDQcOkp.withStartSlot-bYDQcOkp.ghost-PVWoXu5j.gray-PVWoXu5j.small-bYDQcOkp')) {
+            strategySettingsSelector = 'button.lightButton-bYDQcOkp.noContent-bYDQcOkp.withStartSlot-bYDQcOkp.ghost-PVWoXu5j.gray-PVWoXu5j.small-bYDQcOkp';
         } else {
             strategySettingsSelector = '[data-name="legend-settings-action"]';
         }
         
-        // Находим индекс кнопки
-        const allButtons = Array.from(document.querySelectorAll(strategySettingsSelector));
-        const buttonIndex = allButtons.indexOf(settingsButton);
-        console.log('Button index:', buttonIndex, 'of', allButtons.length, 'buttons');
-        strategyButtonIndex = buttonIndex;
-        
-        console.log('Using selector:', strategySettingsSelector, 'with index:', strategyButtonIndex);
+        console.log('Using selector:', strategySettingsSelector);
         
         // Сначала отключаем отслеживание
         isTrackingMode = false;
